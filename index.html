@@ -473,6 +473,12 @@
     @media (max-width: 480px) {
       .title { font-size: 28px; }
       .camera-icon { font-size: 56px; }
+      .dpad-btn { width: 44px; height: 44px; font-size: 18px; }
+      .dpad { grid-template-columns: 44px 44px 44px; grid-template-rows: 44px 44px 44px; }
+      .action-btn { width: 56px; height: 56px; font-size: 13px; }
+      .gb-controls { gap: 8px; padding: 0 4px; }
+      .gb-shell { padding: 16px 12px 32px; }
+      .controls-hint { display: none; }
     }
   </style>
 </head>
@@ -595,7 +601,9 @@
     window.EJS_color = '#9bbc0f';
     window.EJS_startOnLoaded = true;
     window.EJS_backgroundColor = '#0f380f';
-    window.EJS_VirtualGamepadSettings = { hide: true }; // we use our own
+    window.EJS_VirtualGamepadSettings = { hide: true };
+    window.EJS_Buttons = { gamepad: false };
+    window.EJS_mobileOptimized = false;
 
     // Loading progress
     window.EJS_onLoadProgress = function(progress) {
