@@ -372,6 +372,10 @@
     <p class="section-label">▶ PLAY IN BROWSER</p>
 
     <div class="game-wrapper">
+
+      <div id="ios-tip" style="display:none; background:var(--mid); border:1px solid var(--gray); padding:14px 16px; margin-bottom:16px; font-size:6px; color:var(--light); line-height:2.4; letter-spacing:1px;">
+        📱 ON IPHONE: TAP <strong style="color:var(--white)">SHARE → ADD TO HOME SCREEN</strong> FOR THE BEST EXPERIENCE. PREVENTS RANDOM RELOADS.
+      </div>
       <div class="screen-frame">
         <div class="screen-top-bar">
           <span class="screen-label">POKECAM — PHOTOGRAPH VERSION</span>
@@ -424,6 +428,7 @@
     window.EJS_startOnLoaded = true;
     window.EJS_color         = '#ffffff';
     window.EJS_backgroundColor = '#000000';
+    window.EJS_threads       = false;
     window.EJS_Buttons = {
       playPause: false, restart: false, mute: false,
       settings: false, fullscreen: true, saveState: false,
@@ -431,6 +436,7 @@
       cheat: false, volume: false, saveSavFiles: false
     };
     window.EJS_VirtualGamepadSettings = { hide: true };
+    window.EJS_disableLocalStorage = false;
     window.EJS_onGameStart = function() {
       // Force focus to canvas on start for desktop
       const canvas = document.querySelector('#emulator-container canvas');
@@ -440,6 +446,20 @@
   <script src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>
 
   <script>
+    // Prevent tab visibility changes from resetting the emulator
+    document.addEventListener('visibilitychange', e => {
+      e.stopImmediatePropagation();
+    }, true);
+
+    window.addEventListener('blur', e => {
+      e.stopImmediatePropagation();
+    }, true);
+
+    // Show iOS tip only on iPhone Safari
+    if (/iphone/i.test(navigator.userAgent) && /safari/i.test(navigator.userAgent)) {
+      document.getElementById('ios-tip').style.display = 'block';
+    }
+
     // Click emulator container to give it focus (fixes desktop lag)
     document.getElementById('emulator-container').addEventListener('click', function() {
       const canvas = this.querySelector('canvas');
