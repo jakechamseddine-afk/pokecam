@@ -285,6 +285,13 @@
       image-rendering: pixelated;
     }
 
+    #game-canvas {
+      width: 100%;
+      height: 100%;
+      image-rendering: pixelated;
+      display: block;
+    }
+
     .loading-screen {
       position: absolute;
       inset: 0;
@@ -298,6 +305,7 @@
       font-size: 8px;
       letter-spacing: 1px;
       gap: 16px;
+      z-index: 10;
     }
 
     .loading-bar-bg {
@@ -591,79 +599,118 @@
     NOT AFFILIATED WITH NINTENDO OR GAME FREAK
   </footer>
 
-  <!-- EmulatorJS -->
-  <script>
-    // EmulatorJS config
-    window.EJS_player = '#emulator-container';
-    window.EJS_core = 'gb';
-    window.EJS_gameUrl = 'pokeblue.gbc';
-    window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
-    window.EJS_color = '#9bbc0f';
-    window.EJS_startOnLoaded = true;
-    window.EJS_backgroundColor = '#0f380f';
-    window.EJS_VirtualGamepadSettings = { hide: true };
-    window.EJS_Buttons = { gamepad: false };
-    window.EJS_mobileOptimized = false;
+  <!-- WasmBoy GB Emulator -->
+  <script type="module">
+    import WasmBoy from 'https://cdn.jsdelivr.net/npm/wasmboy@0.6.0/dist/wasmboy.esm.js';
 
-    // Loading progress
-    window.EJS_onLoadProgress = function(progress) {
-      const bar = document.getElementById('loading-bar');
-      const text = document.getElementById('loading-text');
-      if (bar) bar.style.width = (progress * 100) + '%';
-      if (text) text.textContent = Math.round(progress * 100) + '%';
-    };
+    const canvas = document.createElement('canvas');
+    canvas.id = 'game-canvas';
+    document.getElementById('emulator-container').appendChild(canvas);
 
-    window.EJS_onGameStart = function() {
-      const screen = document.getElementById('loading-screen');
-      if (screen) screen.style.display = 'none';
-    };
+    const loading = document.getElementById('loading-screen');
+    const bar = document.getElementById('loading-bar');
+    const loadText = document.getElementById('loading-text');
 
-    // Check ROM exists (basic check)
-    fetch('pokeblue.gbc', { method: 'HEAD' })
-      .then(r => { if (!r.ok) throw new Error(); })
-      .catch(() => {
-        document.getElementById('rom-notice').style.display = 'block';
-        const screen = document.getElementById('loading-screen');
-        if (screen) {
-          screen.innerHTML = '<div style="color:#e8c84a;text-align:center;font-family:\'Press Start 2P\',monospace;font-size:8px;padding:20px;line-height:2.5">ROM NOT FOUND<br><br>PLACE pokeblue.gbc<br>IN THIS FOLDER</div>';
-        }
-      });
-  </script>
-  <script src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>
+    async function startGame() {
+      try {
+        loadText.textContent = 'LOADING ROM...';
+        bar.style.width = '20%';
 
-  <!-- Touch controls -->
-  <script>
-    const keyMap = {
-      'ArrowUp': 38, 'ArrowDown': 40, 'ArrowLeft': 37, 'ArrowRight': 39,
-      'x': 88, 'z': 90, 'Enter': 13, 'Backspace': 8
-    };
+        await WasmBoy.config({
+          headless: false,
+          useGbcWhenOptional: false,
+          isAudioEnabled: true,
+          frameSkip: 1,
+          audioBatchProcessing: true,
+          timersBatchProcessing: false,
+          audioAccumulateSamples: true,
+          graphicsBatchProcessing: false,
+          graphicsDisableScanlineRendering: false,
+          tileRendering: true,
+          tileCaching: true,
+          updateGraphicsCallback: false,
+          updateAudioCallback: false,
+          saveStateCallback: false,
+        }, canvas);
 
-    function sendKey(key, down) {
-      const code = keyMap[key];
-      if (!code) return;
-      const type = down ? 'keydown' : 'keyup';
-      const event = new KeyboardEvent(type, {
-        keyCode: code, which: code, key: key, bubbles: true
-      });
-      document.dispatchEvent(event);
+        bar.style.width = '50%';
+        loadText.textContent = 'INITIALIZING...';
+
+        const response = await fetch('pokeblue.gbc');
+        if (!response.ok) throw new Error('ROM not found');
+        const romBuffer = await response.arrayBuffer();
+
+        bar.style.width = '80%';
+        loadText.textContent = 'STARTING...';
+
+        await WasmBoy.loadROM(romBuffer);
+        bar.style.width = '100%';
+
+        loading.style.display = 'none';
+        await WasmBoy.play();
+
+      } catch(e) {
+        loading.innerHTML = `<div style="color:#e8c84a;text-align:center;font-family:'Press Start 2P',monospace;font-size:8px;padding:20px;line-height:2.5">
+          ERROR LOADING ROM<br><br>${e.message}<br><br>CHECK CONSOLE
+        </div>`;
+      }
     }
 
-    document.querySelectorAll('[data-key]').forEach(btn => {
-      const key = btn.dataset.key;
+    startGame();
 
-      ['touchstart', 'mousedown'].forEach(e => {
-        btn.addEventListener(e, ev => {
-          ev.preventDefault();
-          btn.classList.add('pressed');
-          sendKey(key, true);
+    // Keyboard controls
+    const keyMap = {
+      'ArrowUp':    'UP',
+      'ArrowDown':  'DOWN',
+      'ArrowLeft':  'LEFT',
+      'ArrowRight': 'RIGHT',
+      'x':          'A',
+      'X':          'A',
+      'z':          'B',
+      'Z':          'B',
+      'Enter':      'START',
+      'Backspace':  'SELECT',
+      'Shift':      'SELECT',
+    };
+
+    document.addEventListener('keydown', e => {
+      const btn = keyMap[e.key];
+      if (btn) { e.preventDefault(); WasmBoy.setJoypadState(btn, true); }
+    });
+    document.addEventListener('keyup', e => {
+      const btn = keyMap[e.key];
+      if (btn) { e.preventDefault(); WasmBoy.setJoypadState(btn, false); }
+    });
+
+    // Touch/click controls
+    const buttonMap = {
+      'btn-up':     'UP',
+      'btn-down':   'DOWN',
+      'btn-left':   'LEFT',
+      'btn-right':  'RIGHT',
+      'btn-a':      'A',
+      'btn-b':      'B',
+      'btn-start':  'START',
+      'btn-select': 'SELECT',
+    };
+
+    Object.entries(buttonMap).forEach(([id, gbBtn]) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+
+      ['touchstart', 'mousedown'].forEach(evt => {
+        el.addEventListener(evt, e => {
+          e.preventDefault();
+          el.classList.add('pressed');
+          WasmBoy.setJoypadState(gbBtn, true);
         }, { passive: false });
       });
 
-      ['touchend', 'mouseup', 'mouseleave'].forEach(e => {
-        btn.addEventListener(e, ev => {
-          ev.preventDefault();
-          btn.classList.remove('pressed');
-          sendKey(key, false);
+      ['touchend', 'touchcancel', 'mouseup', 'mouseleave'].forEach(evt => {
+        el.addEventListener(evt, e => {
+          e.preventDefault();
+          el.classList.remove('pressed');
+          WasmBoy.setJoypadState(gbBtn, false);
         }, { passive: false });
       });
     });
