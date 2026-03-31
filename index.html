@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
   <title>POKECAM</title>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <style>
@@ -22,6 +25,8 @@
       color: var(--white);
       font-family: 'Press Start 2P', monospace;
       min-height: 100vh;
+      /* prevent iOS pull-to-refresh */
+      overscroll-behavior-y: none;
     }
 
     /* ── HERO ── */
@@ -185,21 +190,37 @@
       background: #000;
       position: relative;
       overflow: hidden;
+      /* prevent iOS pull-to-refresh on game screen */
+      touch-action: none;
     }
 
-    /* Force EmulatorJS canvas to fill and hide its UI */
+    /* Force EmulatorJS canvas to fill and hide ALL its UI */
     #emulator-container canvas {
       width: 100% !important;
       height: 100% !important;
       image-rendering: pixelated;
       display: block;
+      touch-action: none;
     }
 
-    #emulator-container .ejs_start_button,
-    #emulator-container .ejs_menu_bar,
-    #emulator-container .ejs_gamepad,
-    #emulator-container .ejs_virtualGamepad {
+    /* Nuke every EmulatorJS UI element */
+    #emulator-container > *:not(canvas) {
       display: none !important;
+      pointer-events: none !important;
+    }
+
+    .ejs_start_button,
+    .ejs_menu_bar,
+    .ejs_gamepad,
+    .ejs_virtualGamepad,
+    .ejs_virtualGamepad_container,
+    .ejs_controls,
+    .ejs_buttons,
+    [class^="ejs_"],
+    [class*=" ejs_"] {
+      display: none !important;
+      pointer-events: none !important;
+      visibility: hidden !important;
     }
 
     .controls-frame {
@@ -416,6 +437,14 @@
   </footer>
 
   <script>
+    // Prevent iOS pull-to-refresh on the whole page
+    document.addEventListener('touchmove', e => {
+      if (e.target.closest('#emulator-container') || e.target.closest('.controls-frame')) {
+        e.preventDefault();
+      }
+    }, { passive: false });
+
+    // EmulatorJS config
     window.EJS_player        = '#emulator-container';
     window.EJS_core          = 'gb';
     window.EJS_gameUrl       = 'pokeblue.gbc';
@@ -430,6 +459,18 @@
       cheat: false, volume: false, saveSavFiles: false
     };
     window.EJS_VirtualGamepadSettings = { hide: true };
+
+    // Continuously nuke any EmulatorJS UI that gets injected
+    const observer = new MutationObserver(() => {
+      document.querySelectorAll('[class^="ejs_"], [class*=" ejs_"]').forEach(el => {
+        if (!el.matches('canvas')) {
+          el.style.display = 'none';
+          el.style.visibility = 'hidden';
+          el.style.pointerEvents = 'none';
+        }
+      });
+    });
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true });
   </script>
   <script src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>
 
@@ -446,7 +487,11 @@
       if (KC[e.key]) { e.preventDefault(); fire('keyup', KC[e.key]); }
     });
     function fire(type, keyCode) {
-      document.dispatchEvent(new KeyboardEvent(type, { keyCode, bubbles: true }));
+      // Fire on document AND on the canvas directly for maximum compatibility
+      const ev = new KeyboardEvent(type, { keyCode, which: keyCode, bubbles: true, cancelable: true });
+      document.dispatchEvent(ev);
+      const canvas = document.querySelector('#emulator-container canvas');
+      if (canvas) canvas.dispatchEvent(ev);
     }
 
     // Buttons
@@ -457,8 +502,8 @@
     Object.entries(BTNS).forEach(([id, kc]) => {
       const el = document.getElementById(id);
       if (!el) return;
-      const dn = e => { e.preventDefault(); el.classList.add('pressed');    fire('keydown', kc); };
-      const up = e => { e.preventDefault(); el.classList.remove('pressed'); fire('keyup',   kc); };
+      const dn = e => { e.preventDefault(); e.stopPropagation(); el.classList.add('pressed');    fire('keydown', kc); };
+      const up = e => { e.preventDefault(); e.stopPropagation(); el.classList.remove('pressed'); fire('keyup',   kc); };
       el.addEventListener('mousedown',   dn, { passive: false });
       el.addEventListener('touchstart',  dn, { passive: false });
       el.addEventListener('mouseup',     up, { passive: false });
