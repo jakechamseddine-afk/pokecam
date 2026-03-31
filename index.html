@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <title>POKECAM</title>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <style>
@@ -22,6 +23,7 @@
       color: var(--white);
       font-family: 'Press Start 2P', monospace;
       min-height: 100vh;
+      overscroll-behavior-y: none;
     }
 
     /* ── HERO ── */
@@ -187,7 +189,7 @@
       overflow: hidden;
     }
 
-    /* Force EmulatorJS canvas to fill and hide its UI */
+    /* Force EmulatorJS canvas to fill */
     #emulator-container canvas {
       width: 100% !important;
       height: 100% !important;
@@ -195,11 +197,13 @@
       display: block;
     }
 
-    #emulator-container .ejs_start_button,
-    #emulator-container .ejs_menu_bar,
+    /* Fade the overlay buttons to 15% so they don't distract */
+    #emulator-container .ejs_start_button { display: none !important; }
+    #emulator-container .ejs_menu_bar     { display: none !important; }
     #emulator-container .ejs_gamepad,
     #emulator-container .ejs_virtualGamepad {
-      display: none !important;
+      opacity: 0.15 !important;
+      pointer-events: none !important;
     }
 
     .controls-frame {
@@ -234,7 +238,6 @@
       justify-content: center;
       user-select: none;
       -webkit-user-select: none;
-      touch-action: none;
       transition: background 0.08s, color 0.08s;
     }
 
@@ -264,7 +267,6 @@
       cursor: pointer;
       user-select: none;
       -webkit-user-select: none;
-      touch-action: none;
       transition: background 0.08s, color 0.08s, border-color 0.08s;
     }
 
@@ -289,7 +291,6 @@
       padding: 9px 18px;
       cursor: pointer;
       letter-spacing: 1px;
-      touch-action: none;
       transition: border-color 0.08s, color 0.08s;
     }
 
@@ -430,10 +431,21 @@
       cheat: false, volume: false, saveSavFiles: false
     };
     window.EJS_VirtualGamepadSettings = { hide: true };
+    window.EJS_onGameStart = function() {
+      // Force focus to canvas on start for desktop
+      const canvas = document.querySelector('#emulator-container canvas');
+      if (canvas) { canvas.setAttribute('tabindex', '0'); canvas.focus(); }
+    };
   </script>
   <script src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>
 
   <script>
+    // Click emulator container to give it focus (fixes desktop lag)
+    document.getElementById('emulator-container').addEventListener('click', function() {
+      const canvas = this.querySelector('canvas');
+      if (canvas) canvas.focus();
+    });
+
     // Keyboard
     const KC = {
       ArrowUp:38, ArrowDown:40, ArrowLeft:37, ArrowRight:39,
