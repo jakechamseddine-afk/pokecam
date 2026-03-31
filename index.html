@@ -189,6 +189,39 @@
       overflow: hidden;
     }
 
+    #start-overlay {
+      position: absolute;
+      inset: 0;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      cursor: pointer;
+      z-index: 10;
+    }
+
+    #start-overlay .start-text {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 10px;
+      color: var(--white);
+      letter-spacing: 2px;
+      animation: blink 1.2s step-end infinite;
+    }
+
+    #start-overlay .start-sub {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 6px;
+      color: var(--gray);
+      letter-spacing: 1px;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
     /* Force EmulatorJS canvas to fill */
     #emulator-container canvas {
       width: 100% !important;
@@ -381,7 +414,12 @@
           <span class="screen-label">POKECAM — PHOTOGRAPH VERSION</span>
           <span class="screen-dot"></span>
         </div>
-        <div id="emulator-container"></div>
+        <div id="emulator-container">
+          <div id="start-overlay">
+            <div class="start-text">▶ PRESS TO PLAY</div>
+            <div class="start-sub">POKECAM — PHOTOGRAPH VERSION</div>
+          </div>
+        </div>
       </div>
 
       <div class="controls-frame">
@@ -421,31 +459,6 @@
   </footer>
 
   <script>
-    window.EJS_player        = '#emulator-container';
-    window.EJS_core          = 'gb';
-    window.EJS_gameUrl       = 'pokeblue.gbc';
-    window.EJS_pathtodata    = 'https://cdn.emulatorjs.org/stable/data/';
-    window.EJS_startOnLoaded = true;
-    window.EJS_color         = '#ffffff';
-    window.EJS_backgroundColor = '#000000';
-    window.EJS_threads       = false;
-    window.EJS_Buttons = {
-      playPause: false, restart: false, mute: false,
-      settings: false, fullscreen: true, saveState: false,
-      loadState: false, screenRecord: false, gamepad: false,
-      cheat: false, volume: false, saveSavFiles: false
-    };
-    window.EJS_VirtualGamepadSettings = { hide: true };
-    window.EJS_disableLocalStorage = false;
-    window.EJS_onGameStart = function() {
-      // Force focus to canvas on start for desktop
-      const canvas = document.querySelector('#emulator-container canvas');
-      if (canvas) { canvas.setAttribute('tabindex', '0'); canvas.focus(); }
-    };
-  </script>
-  <script src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>
-
-  <script>
     // Prevent tab visibility changes from resetting the emulator
     document.addEventListener('visibilitychange', e => {
       e.stopImmediatePropagation();
@@ -460,11 +473,41 @@
       document.getElementById('ios-tip').style.display = 'block';
     }
 
-    // Click emulator container to give it focus (fixes desktop lag)
-    document.getElementById('emulator-container').addEventListener('click', function() {
-      const canvas = this.querySelector('canvas');
-      if (canvas) canvas.focus();
-    });
+    // Lazy load emulator on first user interaction - fixes Chrome lag
+    let started = false;
+    function startEmulator() {
+      if (started) return;
+      started = true;
+      document.getElementById('start-overlay').style.display = 'none';
+
+      window.EJS_player        = '#emulator-container';
+      window.EJS_core          = 'gb';
+      window.EJS_gameUrl       = 'pokeblue.gbc';
+      window.EJS_pathtodata    = 'https://cdn.emulatorjs.org/stable/data/';
+      window.EJS_startOnLoaded = true;
+      window.EJS_color         = '#ffffff';
+      window.EJS_backgroundColor = '#000000';
+      window.EJS_threads       = false;
+      window.EJS_Buttons = {
+        playPause: false, restart: false, mute: false,
+        settings: false, fullscreen: true, saveState: false,
+        loadState: false, screenRecord: false, gamepad: false,
+        cheat: false, volume: false, saveSavFiles: false
+      };
+      window.EJS_VirtualGamepadSettings = { hide: true };
+      window.EJS_onGameStart = function() {
+        const canvas = document.querySelector('#emulator-container canvas');
+        if (canvas) { canvas.setAttribute('tabindex', '0'); canvas.focus(); }
+      };
+
+      const script = document.createElement('script');
+      script.src = 'https://cdn.emulatorjs.org/stable/data/loader.js';
+      document.body.appendChild(script);
+    }
+
+    const overlay = document.getElementById('start-overlay');
+    overlay.addEventListener('click', startEmulator);
+    overlay.addEventListener('touchstart', e => { e.preventDefault(); startEmulator(); }, { passive: false });
 
     // Keyboard
     const KC = {
