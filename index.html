@@ -3,490 +3,326 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>POKECAM — Photograph 'Em All</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap" rel="stylesheet">
+  <title>POKECAM</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --gb-black:   #0f0f0f;
-      --gb-dark:    #1a1a2e;
-      --gb-green:   #9bbc0f;
-      --gb-light:   #8bac0f;
-      --gb-pale:    #306230;
-      --gb-darkest: #0f380f;
-      --accent:     #e8c84a;
-      --white:      #f0f0e8;
-    }
-
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
+    :root {
+      --black: #0a0a0a;
+      --dark:  #111111;
+      --mid:   #222222;
+      --gray:  #555555;
+      --light: #aaaaaa;
+      --white: #f0f0f0;
+    }
+
     body {
-      background-color: var(--gb-dark);
+      background: var(--black);
       color: var(--white);
-      font-family: 'VT323', monospace;
-      font-size: 20px;
-      overflow-x: hidden;
-      cursor: crosshair;
-    }
-
-    /* Scanline overlay */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgba(0,0,0,0.07) 2px,
-        rgba(0,0,0,0.07) 4px
-      );
-      pointer-events: none;
-      z-index: 9999;
-    }
-
-    /* Noise texture */
-    body::after {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
-      pointer-events: none;
-      z-index: 9998;
-      opacity: 0.4;
+      font-family: 'Press Start 2P', monospace;
+      min-height: 100vh;
     }
 
     /* ── HERO ── */
     .hero {
-      min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      min-height: 100vh;
       padding: 40px 20px;
+      border-bottom: 1px solid var(--mid);
       position: relative;
-      background:
-        radial-gradient(ellipse 80% 60% at 50% 0%, rgba(155,188,15,0.12) 0%, transparent 70%),
-        var(--gb-dark);
     }
 
-    .camera-icon {
-      font-size: 80px;
-      margin-bottom: 16px;
-      animation: shutterBlink 3s ease-in-out infinite;
-      filter: drop-shadow(0 0 20px rgba(155,188,15,0.6));
-    }
-
-    @keyframes shutterBlink {
-      0%, 90%, 100% { opacity: 1; transform: scale(1); }
-      95% { opacity: 0.2; transform: scale(0.95); }
-    }
-
-    .title {
-      font-family: 'Press Start 2P', monospace;
-      font-size: clamp(28px, 6vw, 56px);
-      color: var(--gb-green);
-      text-shadow:
-        4px 4px 0 var(--gb-darkest),
-        0 0 40px rgba(155,188,15,0.4);
-      letter-spacing: 4px;
-      margin-bottom: 8px;
-      animation: titleGlow 2s ease-in-out infinite alternate;
-    }
-
-    @keyframes titleGlow {
-      from { text-shadow: 4px 4px 0 var(--gb-darkest), 0 0 20px rgba(155,188,15,0.3); }
-      to   { text-shadow: 4px 4px 0 var(--gb-darkest), 0 0 50px rgba(155,188,15,0.7); }
-    }
-
-    .subtitle {
-      font-family: 'Press Start 2P', monospace;
-      font-size: clamp(9px, 2vw, 13px);
-      color: var(--accent);
-      letter-spacing: 2px;
-      margin-bottom: 48px;
-      opacity: 0.9;
-    }
-
-    .tagline {
-      font-size: 28px;
-      color: var(--white);
-      opacity: 0.7;
-      margin-bottom: 40px;
-      text-align: center;
-      max-width: 500px;
-      line-height: 1.4;
-    }
-
-    .play-btn {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 14px;
-      background: var(--gb-green);
-      color: var(--gb-darkest);
-      border: none;
-      padding: 18px 40px;
-      cursor: crosshair;
-      letter-spacing: 2px;
-      position: relative;
-      transition: transform 0.1s, box-shadow 0.1s;
-      box-shadow: 4px 4px 0 var(--gb-darkest);
-      text-decoration: none;
-      display: inline-block;
-    }
-
-    .play-btn:hover {
-      transform: translate(-2px, -2px);
-      box-shadow: 6px 6px 0 var(--gb-darkest);
-      background: var(--accent);
-    }
-
-    .play-btn:active {
-      transform: translate(2px, 2px);
-      box-shadow: 2px 2px 0 var(--gb-darkest);
-    }
-
-    .scroll-hint {
-      position: absolute;
-      bottom: 30px;
-      font-family: 'Press Start 2P', monospace;
+    .hero-eyebrow {
       font-size: 8px;
-      color: var(--gb-green);
-      opacity: 0.5;
-      animation: bounce 1.5s ease-in-out infinite;
-      letter-spacing: 1px;
+      color: var(--gray);
+      letter-spacing: 4px;
+      margin-bottom: 24px;
     }
 
-    @keyframes bounce {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(6px); }
+    .hero-title {
+      font-size: clamp(40px, 10vw, 96px);
+      color: var(--white);
+      letter-spacing: 8px;
+      margin-bottom: 16px;
+      line-height: 1;
     }
 
-    /* ── ABOUT ── */
-    .about {
-      padding: 80px 20px;
-      max-width: 900px;
-      margin: 0 auto;
-    }
-
-    .section-title {
-      font-family: 'Press Start 2P', monospace;
-      font-size: clamp(12px, 3vw, 20px);
-      color: var(--accent);
-      margin-bottom: 32px;
-      border-left: 4px solid var(--gb-green);
-      padding-left: 16px;
-    }
-
-    .features {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 24px;
+    .hero-sub {
+      font-size: 9px;
+      color: var(--gray);
+      letter-spacing: 3px;
       margin-bottom: 60px;
     }
 
-    .feature-card {
-      background: rgba(155,188,15,0.05);
-      border: 2px solid rgba(155,188,15,0.2);
-      padding: 24px;
-      position: relative;
-      transition: border-color 0.2s, transform 0.2s;
-    }
-
-    .feature-card:hover {
-      border-color: var(--gb-green);
-      transform: translateY(-4px);
-    }
-
-    .feature-card::before {
-      content: '';
-      position: absolute;
-      top: -2px; left: -2px;
-      width: 12px; height: 12px;
-      background: var(--gb-green);
-    }
-
-    .feature-icon {
-      font-size: 36px;
-      margin-bottom: 12px;
-      display: block;
-    }
-
-    .feature-title {
-      font-family: 'Press Start 2P', monospace;
+    .hero-desc {
       font-size: 9px;
-      color: var(--gb-green);
-      margin-bottom: 8px;
+      color: var(--light);
+      line-height: 2.4;
+      text-align: center;
+      max-width: 400px;
+      margin-bottom: 56px;
       letter-spacing: 1px;
     }
 
-    .feature-desc {
-      font-size: 20px;
-      color: var(--white);
-      opacity: 0.75;
-      line-height: 1.5;
+    .play-btn {
+      display: inline-block;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 10px;
+      color: var(--black);
+      background: var(--white);
+      padding: 16px 40px;
+      text-decoration: none;
+      letter-spacing: 2px;
+      transition: background 0.15s;
     }
 
-    /* ── EMULATOR ── */
+    .play-btn:hover { background: var(--light); }
+
+    .scroll-hint {
+      position: absolute;
+      bottom: 28px;
+      font-size: 7px;
+      color: var(--gray);
+      letter-spacing: 2px;
+      animation: nudge 1.8s ease-in-out infinite;
+    }
+
+    @keyframes nudge {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(5px); }
+    }
+
+    /* ── FEATURES ── */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      border-bottom: 1px solid var(--mid);
+    }
+
+    .feat {
+      padding: 48px 32px;
+      border-right: 1px solid var(--mid);
+    }
+
+    .feat:last-child { border-right: none; }
+
+    .feat-num {
+      font-size: 7px;
+      color: var(--gray);
+      letter-spacing: 2px;
+      margin-bottom: 20px;
+    }
+
+    .feat-title {
+      font-size: 9px;
+      color: var(--white);
+      margin-bottom: 16px;
+      letter-spacing: 1px;
+      line-height: 1.8;
+    }
+
+    .feat-desc {
+      font-size: 7px;
+      color: var(--gray);
+      line-height: 2.2;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── GAME SECTION ── */
     .game-section {
-      padding: 60px 20px 80px;
+      padding: 80px 20px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      background: rgba(0,0,0,0.3);
+      border-bottom: 1px solid var(--mid);
+    }
+
+    .section-label {
+      font-size: 7px;
+      color: var(--gray);
+      letter-spacing: 4px;
+      margin-bottom: 48px;
     }
 
     .game-wrapper {
       width: 100%;
-      max-width: 480px;
-      position: relative;
+      max-width: 420px;
     }
 
-    .gb-shell {
-      background: linear-gradient(160deg, #2a2a3e 0%, #1a1a2e 100%);
-      border-radius: 12px 12px 40px 40px;
-      padding: 20px 20px 40px;
-      box-shadow:
-        0 0 0 2px rgba(155,188,15,0.2),
-        0 20px 60px rgba(0,0,0,0.6),
-        inset 0 1px 0 rgba(255,255,255,0.05);
-      position: relative;
+    .screen-frame {
+      background: var(--dark);
+      border: 1px solid var(--mid);
+      padding: 12px;
     }
 
-    .gb-screen-bezel {
-      background: #111118;
-      border-radius: 6px 6px 2px 2px;
-      padding: 16px;
-      margin-bottom: 24px;
-      box-shadow: inset 0 2px 8px rgba(0,0,0,0.8);
+    .screen-top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 4px 10px;
     }
 
-    .gb-label {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 7px;
-      color: var(--gb-green);
-      opacity: 0.5;
-      text-align: center;
-      margin-bottom: 8px;
-      letter-spacing: 3px;
+    .screen-label {
+      font-size: 6px;
+      color: var(--gray);
+      letter-spacing: 2px;
+    }
+
+    .screen-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--mid);
+      border-radius: 50%;
     }
 
     #emulator-container {
       width: 100%;
       aspect-ratio: 10/9;
-      background: var(--gb-darkest);
-      border-radius: 2px;
-      overflow: hidden;
+      background: #000;
       position: relative;
+      overflow: hidden;
     }
 
+    /* Force EmulatorJS canvas to fill and hide its UI */
     #emulator-container canvas {
       width: 100% !important;
       height: 100% !important;
       image-rendering: pixelated;
-    }
-
-    #game-canvas {
-      width: 100%;
-      height: 100%;
-      image-rendering: pixelated;
       display: block;
     }
 
-    .loading-screen {
-      position: absolute;
-      inset: 0;
+    #emulator-container .ejs_start_button,
+    #emulator-container .ejs_menu_bar,
+    #emulator-container .ejs_gamepad,
+    #emulator-container .ejs_virtualGamepad {
+      display: none !important;
+    }
+
+    .controls-frame {
+      background: var(--dark);
+      border: 1px solid var(--mid);
+      border-top: none;
+      padding: 24px 20px 28px;
+    }
+
+    .controls-row {
       display: flex;
-      flex-direction: column;
+      justify-content: space-between;
       align-items: center;
-      justify-content: center;
-      background: var(--gb-darkest);
-      color: var(--gb-green);
-      font-family: 'Press Start 2P', monospace;
-      font-size: 8px;
-      letter-spacing: 1px;
-      gap: 16px;
-      z-index: 10;
-    }
-
-    .loading-bar-bg {
-      width: 80%;
-      height: 8px;
-      background: rgba(155,188,15,0.2);
-    }
-
-    .loading-bar {
-      height: 100%;
-      background: var(--gb-green);
-      width: 0%;
-      transition: width 0.3s;
-    }
-
-    /* D-pad and buttons */
-    .gb-controls {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      align-items: center;
-      gap: 16px;
-      padding: 0 8px;
+      margin-bottom: 16px;
     }
 
     .dpad {
       display: grid;
-      grid-template-columns: 32px 32px 32px;
-      grid-template-rows: 32px 32px 32px;
+      grid-template-columns: 40px 40px 40px;
+      grid-template-rows: 40px 40px 40px;
       gap: 2px;
     }
 
     .dpad-btn {
-      background: #111;
+      background: var(--mid);
       border: none;
-      color: var(--white);
-      font-size: 14px;
-      cursor: crosshair;
+      color: var(--light);
+      font-size: 13px;
+      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 2px;
-      transition: background 0.1s;
       user-select: none;
       -webkit-user-select: none;
+      touch-action: none;
+      transition: background 0.08s, color 0.08s;
     }
 
     .dpad-btn:active, .dpad-btn.pressed {
-      background: var(--gb-green);
-      color: var(--gb-darkest);
+      background: var(--white);
+      color: var(--black);
     }
 
-    .dpad-center { background: #1a1a1a; cursor: default; }
-    .dpad-empty { background: transparent; }
+    .dpad-center { background: var(--mid); cursor: default; }
+    .dpad-empty  { background: transparent; }
 
-    .action-btns {
+    .ab-btns {
       display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 12px;
+      gap: 14px;
+      align-items: center;
     }
 
-    .ab-row {
-      display: flex;
-      gap: 12px;
-    }
-
-    .action-btn {
-      width: 44px;
-      height: 44px;
+    .ab-btn {
+      width: 52px;
+      height: 52px;
       border-radius: 50%;
-      border: none;
-      cursor: crosshair;
+      border: 2px solid var(--gray);
+      background: transparent;
+      color: var(--light);
       font-family: 'Press Start 2P', monospace;
-      font-size: 10px;
-      font-weight: bold;
-      transition: transform 0.1s, box-shadow 0.1s;
+      font-size: 12px;
+      cursor: pointer;
       user-select: none;
       -webkit-user-select: none;
+      touch-action: none;
+      transition: background 0.08s, color 0.08s, border-color 0.08s;
     }
 
-    .btn-a {
-      background: var(--gb-green);
-      color: var(--gb-darkest);
-      box-shadow: 0 4px 0 var(--gb-pale);
+    .ab-btn:active, .ab-btn.pressed {
+      background: var(--white);
+      color: var(--black);
+      border-color: var(--white);
     }
 
-    .btn-b {
-      background: #cc3333;
-      color: white;
-      box-shadow: 0 4px 0 #881111;
-    }
-
-    .action-btn:active, .action-btn.pressed {
-      transform: translateY(3px);
-      box-shadow: none !important;
-    }
-
-    .system-btns {
+    .sys-btns {
       display: flex;
       justify-content: center;
-      gap: 24px;
-      margin-top: 16px;
+      gap: 20px;
     }
 
     .sys-btn {
-      background: #333;
-      border: none;
-      color: var(--white);
+      background: transparent;
+      border: 1px solid var(--mid);
+      color: var(--gray);
       font-family: 'Press Start 2P', monospace;
       font-size: 6px;
-      padding: 6px 14px;
-      border-radius: 12px;
-      cursor: crosshair;
+      padding: 9px 18px;
+      cursor: pointer;
       letter-spacing: 1px;
-      transition: background 0.1s;
+      touch-action: none;
+      transition: border-color 0.08s, color 0.08s;
     }
 
     .sys-btn:active, .sys-btn.pressed {
-      background: var(--gb-green);
-      color: var(--gb-darkest);
+      border-color: var(--white);
+      color: var(--white);
     }
 
-    .controls-hint {
+    .keyboard-hint {
       margin-top: 20px;
-      font-family: 'Press Start 2P', monospace;
-      font-size: 7px;
-      color: var(--gb-green);
-      opacity: 0.4;
+      font-size: 6px;
+      color: var(--gray);
       text-align: center;
       letter-spacing: 1px;
-      line-height: 2;
+      line-height: 2.4;
     }
 
-    /* ── FOOTER ── */
     footer {
+      padding: 48px 20px;
       text-align: center;
-      padding: 40px 20px;
-      font-family: 'Press Start 2P', monospace;
-      font-size: 8px;
-      color: var(--gb-green);
-      opacity: 0.4;
-      letter-spacing: 1px;
-      line-height: 2.5;
-      border-top: 1px solid rgba(155,188,15,0.1);
-    }
-
-    /* Pixel divider */
-    .pixel-divider {
-      width: 100%;
-      height: 4px;
-      background: repeating-linear-gradient(
-        90deg,
-        var(--gb-green) 0px, var(--gb-green) 8px,
-        transparent 8px, transparent 16px
-      );
-      opacity: 0.3;
-      margin: 0;
-    }
-
-    /* ROM missing notice */
-    .rom-notice {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 8px;
-      color: var(--accent);
-      text-align: center;
-      padding: 16px;
-      border: 2px solid rgba(232,200,74,0.3);
-      margin-top: 16px;
-      line-height: 2;
-      display: none;
+      font-size: 7px;
+      color: var(--gray);
+      letter-spacing: 2px;
+      line-height: 3;
     }
 
     @media (max-width: 480px) {
-      .title { font-size: 28px; }
-      .camera-icon { font-size: 56px; }
-      .dpad-btn { width: 44px; height: 44px; font-size: 18px; }
-      .dpad { grid-template-columns: 44px 44px 44px; grid-template-rows: 44px 44px 44px; }
-      .action-btn { width: 56px; height: 56px; font-size: 13px; }
-      .gb-controls { gap: 8px; padding: 0 4px; }
-      .gb-shell { padding: 16px 12px 32px; }
-      .controls-hint { display: none; }
+      .hero-title { font-size: 36px; letter-spacing: 4px; }
+      .feat { border-right: none; border-bottom: 1px solid var(--mid); }
+      .keyboard-hint { display: none; }
+      .dpad { grid-template-columns: 48px 48px 48px; grid-template-rows: 48px 48px 48px; }
+      .dpad-btn { font-size: 16px; }
+      .ab-btn { width: 60px; height: 60px; font-size: 14px; }
     }
   </style>
 </head>
@@ -494,193 +330,141 @@
 
   <!-- HERO -->
   <section class="hero">
-    <div class="camera-icon">📷</div>
-    <h1 class="title">POKECAM</h1>
-    <p class="subtitle">PHOTOGRAPH VERSION</p>
-    <p class="tagline">No battles. No catching. Just you, your camera, and the wild.</p>
+    <p class="hero-eyebrow">A POKÉMON BLUE ROM HACK</p>
+    <h1 class="hero-title">POKECAM</h1>
+    <p class="hero-sub">PHOTOGRAPH VERSION</p>
+    <p class="hero-desc">
+      No battles. No Pokéballs.<br>
+      Just you, your camera,<br>
+      and the wild.
+    </p>
     <a href="#play" class="play-btn">▶ PLAY NOW</a>
-    <span class="scroll-hint">▼ SCROLL DOWN ▼</span>
+    <span class="scroll-hint">▼ SCROLL ▼</span>
   </section>
 
-  <div class="pixel-divider"></div>
-
-  <!-- ABOUT -->
-  <section class="about">
-    <h2 class="section-title">WHAT IS POKECAM?</h2>
-    <div class="features">
-      <div class="feature-card">
-        <span class="feature-icon">📸</span>
-        <div class="feature-title">NO FIGHTING</div>
-        <div class="feature-desc">Safari Zone mechanics everywhere. Snap photos instead of throwing Poké Balls.</div>
-      </div>
-      <div class="feature-card">
-        <span class="feature-icon">🎞️</span>
-        <div class="feature-title">FILM SHOTS</div>
-        <div class="feature-desc">Load up your camera with Film Shots. Use ZOOM and FLASH to line up the perfect photo.</div>
-      </div>
-      <div class="feature-card">
-        <span class="feature-icon">🦅</span>
-        <div class="feature-title">RARE ENCOUNTERS</div>
-        <div class="feature-desc">Mewtwo, Mew, the legendary birds — all roaming the early routes. Fast. Skittish. Worth it.</div>
-      </div>
-      <div class="feature-card">
-        <span class="feature-icon">🏆</span>
-        <div class="feature-title">THE MISSION</div>
-        <div class="feature-desc">Photograph 25 unique species for Prof. Oak's photo demo. Then the credits roll.</div>
-      </div>
+  <!-- FEATURES -->
+  <div class="features">
+    <div class="feat">
+      <div class="feat-num">01</div>
+      <div class="feat-title">NO FIGHTING</div>
+      <div class="feat-desc">Safari Zone mechanics everywhere. Snap photos instead of throwing Poké Balls.</div>
     </div>
-  </section>
-
-  <div class="pixel-divider"></div>
+    <div class="feat">
+      <div class="feat-num">02</div>
+      <div class="feat-title">ZOOM + FLASH</div>
+      <div class="feat-desc">Use ZOOM to distract. Use FLASH to startle. Line up the perfect shot.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-num">03</div>
+      <div class="feat-title">RARE ENCOUNTERS</div>
+      <div class="feat-desc">Mewtwo. Mew. The legendary birds. All roaming the early routes.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-num">04</div>
+      <div class="feat-title">THE MISSION</div>
+      <div class="feat-desc">Photograph 25 unique species for Prof. Oak. Then the credits roll.</div>
+    </div>
+  </div>
 
   <!-- GAME -->
   <section class="game-section" id="play">
-    <h2 class="section-title" style="margin-bottom:32px">▶ PLAY IN BROWSER</h2>
+    <p class="section-label">▶ PLAY IN BROWSER</p>
 
     <div class="game-wrapper">
-      <div class="gb-shell">
-        <div class="gb-screen-bezel">
-          <div class="gb-label">POKECAM — PHOTOGRAPH VERSION</div>
-          <div id="emulator-container">
-            <div class="loading-screen" id="loading-screen">
-              <div>LOADING...</div>
-              <div class="loading-bar-bg"><div class="loading-bar" id="loading-bar"></div></div>
-              <div id="loading-text">INITIALIZING</div>
-            </div>
-          </div>
+      <div class="screen-frame">
+        <div class="screen-top-bar">
+          <span class="screen-label">POKECAM — PHOTOGRAPH VERSION</span>
+          <span class="screen-dot"></span>
         </div>
+        <div id="emulator-container"></div>
+      </div>
 
-        <!-- D-pad + Buttons -->
-        <div class="gb-controls">
+      <div class="controls-frame">
+        <div class="controls-row">
           <div class="dpad">
             <div class="dpad-empty"></div>
-            <button class="dpad-btn" id="btn-up" data-key="ArrowUp">▲</button>
+            <button class="dpad-btn" id="btn-up">▲</button>
             <div class="dpad-empty"></div>
-            <button class="dpad-btn" id="btn-left" data-key="ArrowLeft">◀</button>
+            <button class="dpad-btn" id="btn-left">◀</button>
             <div class="dpad-btn dpad-center"></div>
-            <button class="dpad-btn" id="btn-right" data-key="ArrowRight">▶</button>
+            <button class="dpad-btn" id="btn-right">▶</button>
             <div class="dpad-empty"></div>
-            <button class="dpad-btn" id="btn-down" data-key="ArrowDown">▼</button>
+            <button class="dpad-btn" id="btn-down">▼</button>
             <div class="dpad-empty"></div>
           </div>
-
-          <div class="action-btns">
-            <div class="ab-row">
-              <button class="action-btn btn-b" id="btn-b" data-key="z">B</button>
-              <button class="action-btn btn-a" id="btn-a" data-key="x">A</button>
-            </div>
+          <div class="ab-btns">
+            <button class="ab-btn" id="btn-b">B</button>
+            <button class="ab-btn" id="btn-a">A</button>
           </div>
         </div>
-
-        <div class="system-btns">
-          <button class="sys-btn" id="btn-select" data-key="Backspace">SELECT</button>
-          <button class="sys-btn" id="btn-start" data-key="Enter">START</button>
+        <div class="sys-btns">
+          <button class="sys-btn" id="btn-select">SELECT</button>
+          <button class="sys-btn" id="btn-start">START</button>
         </div>
       </div>
 
-      <div class="controls-hint">
-        KEYBOARD: ARROWS · X=A · Z=B · ENTER=START · BKSP=SELECT
-      </div>
-
-      <div class="rom-notice" id="rom-notice">
-        ⚠ ROM FILE NOT FOUND ⚠<br>
-        PLACE pokeblue.gbc IN THE SAME FOLDER AS THIS FILE
-      </div>
+      <p class="keyboard-hint">
+        ARROWS · X = A · Z = B · ENTER = START · BKSP = SELECT
+      </p>
     </div>
   </section>
-
-  <div class="pixel-divider"></div>
 
   <footer>
     POKECAM — PHOTOGRAPH VERSION<br>
     A POKÉMON BLUE ROM HACK<br>
-    MADE WITH ♥ USING POKERED<br>
-    <br>
     NOT AFFILIATED WITH NINTENDO OR GAME FREAK
   </footer>
 
-  <!-- gb.js Game Boy emulator -->
-  <script src="https://cdn.jsdelivr.net/npm/gb.js@0.0.9/dist/gb.min.js"></script>
   <script>
-    const canvas = document.createElement('canvas');
-    canvas.id = 'game-canvas';
-    canvas.width = 160;
-    canvas.height = 144;
-    canvas.style.width = '100%';
-    canvas.style.height = '100%';
-    canvas.style.imageRendering = 'pixelated';
-    canvas.style.display = 'block';
-    document.getElementById('emulator-container').appendChild(canvas);
-
-    const loading = document.getElementById('loading-screen');
-    const bar = document.getElementById('loading-bar');
-    const loadText = document.getElementById('loading-text');
-
-    let gb = null;
-
-    fetch('pokeblue.gbc')
-      .then(r => {
-        if (!r.ok) throw new Error('ROM not found');
-        bar.style.width = '50%';
-        loadText.textContent = 'LOADING ROM...';
-        return r.arrayBuffer();
-      })
-      .then(buffer => {
-        bar.style.width = '90%';
-        loadText.textContent = 'STARTING...';
-        const rom = new Uint8Array(buffer);
-        gb = new GB(canvas, rom);
-        bar.style.width = '100%';
-        loading.style.display = 'none';
-        gb.run();
-      })
-      .catch(e => {
-        loading.innerHTML = `<div style="color:#e8c84a;text-align:center;font-family:'Press Start 2P',monospace;font-size:8px;padding:20px;line-height:2.5">ROM NOT FOUND<br><br>PLACE pokeblue.gbc<br>IN THIS FOLDER</div>`;
-      });
-
-    // Keyboard controls
-    const keyMap = {
-      'ArrowRight': 'right', 'ArrowLeft': 'left',
-      'ArrowUp':    'up',    'ArrowDown': 'down',
-      'x': 'a', 'X': 'a',
-      'z': 'b', 'Z': 'b',
-      'Enter': 'start', 'Backspace': 'select', 'Shift': 'select'
+    window.EJS_player        = '#emulator-container';
+    window.EJS_core          = 'gb';
+    window.EJS_gameUrl       = 'pokeblue.gbc';
+    window.EJS_pathtodata    = 'https://cdn.emulatorjs.org/stable/data/';
+    window.EJS_startOnLoaded = true;
+    window.EJS_color         = '#ffffff';
+    window.EJS_backgroundColor = '#000000';
+    window.EJS_Buttons = {
+      playPause: false, restart: false, mute: false,
+      settings: false, fullscreen: true, saveState: false,
+      loadState: false, screenRecord: false, gamepad: false,
+      cheat: false, volume: false, saveSavFiles: false
     };
+    window.EJS_VirtualGamepadSettings = { hide: true };
+  </script>
+  <script src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>
 
+  <script>
+    // Keyboard
+    const KC = {
+      ArrowUp:38, ArrowDown:40, ArrowLeft:37, ArrowRight:39,
+      x:88, X:88, z:90, Z:90, Enter:13, Backspace:8
+    };
     document.addEventListener('keydown', e => {
-      const btn = keyMap[e.key];
-      if (btn && gb) { e.preventDefault(); gb.buttonDown(btn); }
+      if (KC[e.key]) { e.preventDefault(); fire('keydown', KC[e.key]); }
     });
     document.addEventListener('keyup', e => {
-      const btn = keyMap[e.key];
-      if (btn && gb) { e.preventDefault(); gb.buttonUp(btn); }
+      if (KC[e.key]) { e.preventDefault(); fire('keyup', KC[e.key]); }
     });
+    function fire(type, keyCode) {
+      document.dispatchEvent(new KeyboardEvent(type, { keyCode, bubbles: true }));
+    }
 
-    // Touch/click controls
-    const buttonMap = {
-      'btn-up': 'up', 'btn-down': 'down',
-      'btn-left': 'left', 'btn-right': 'right',
-      'btn-a': 'a', 'btn-b': 'b',
-      'btn-start': 'start', 'btn-select': 'select'
+    // Buttons
+    const BTNS = {
+      'btn-up':38,'btn-down':40,'btn-left':37,'btn-right':39,
+      'btn-a':88,'btn-b':90,'btn-start':13,'btn-select':8
     };
-
-    Object.entries(buttonMap).forEach(([id, gbBtn]) => {
+    Object.entries(BTNS).forEach(([id, kc]) => {
       const el = document.getElementById(id);
       if (!el) return;
-      ['touchstart', 'mousedown'].forEach(evt => {
-        el.addEventListener(evt, e => {
-          e.preventDefault();
-          el.classList.add('pressed');
-          if (gb) gb.buttonDown(gbBtn);
-        }, { passive: false });
-      });
-      ['touchend', 'touchcancel', 'mouseup', 'mouseleave'].forEach(evt => {
-        el.addEventListener(evt, e => {
-          e.preventDefault();
-          el.classList.remove('pressed');
-          if (gb) gb.buttonUp(gbBtn);
-        }, { passive: false });
-      });
+      const dn = e => { e.preventDefault(); el.classList.add('pressed');    fire('keydown', kc); };
+      const up = e => { e.preventDefault(); el.classList.remove('pressed'); fire('keyup',   kc); };
+      el.addEventListener('mousedown',   dn, { passive: false });
+      el.addEventListener('touchstart',  dn, { passive: false });
+      el.addEventListener('mouseup',     up, { passive: false });
+      el.addEventListener('mouseleave',  up, { passive: false });
+      el.addEventListener('touchend',    up, { passive: false });
+      el.addEventListener('touchcancel', up, { passive: false });
     });
   </script>
 
