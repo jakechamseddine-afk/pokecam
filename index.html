@@ -194,7 +194,7 @@
       touch-action: none;
     }
 
-    /* Force EmulatorJS canvas to fill and hide ALL its UI */
+    /* Force EmulatorJS canvas to fill */
     #emulator-container canvas {
       width: 100% !important;
       height: 100% !important;
@@ -203,25 +203,11 @@
       touch-action: none;
     }
 
-    /* Nuke every EmulatorJS UI element */
-    #emulator-container > *:not(canvas) {
-      display: none !important;
-      pointer-events: none !important;
-    }
-
-    .ejs_start_button,
-    .ejs_menu_bar,
-    .ejs_gamepad,
-    .ejs_virtualGamepad,
-    .ejs_virtualGamepad_container,
-    .ejs_controls,
-    .ejs_buttons,
-    [class^="ejs_"],
-    [class*=" ejs_"] {
-      display: none !important;
-      pointer-events: none !important;
-      visibility: hidden !important;
-    }
+    /* Hide EmulatorJS overlay controls only - not the canvas */
+    .ejs_start_button { display: none !important; }
+    .ejs_menu_bar { display: none !important; }
+    .ejs_gamepad { opacity: 0.15 !important; pointer-events: none !important; }
+    .ejs_virtualGamepad { opacity: 0.15 !important; pointer-events: none !important; }
 
     .controls-frame {
       background: var(--dark);
@@ -461,16 +447,17 @@
     window.EJS_VirtualGamepadSettings = { hide: true };
 
     // Continuously nuke any EmulatorJS UI that gets injected
-    const observer = new MutationObserver(() => {
-      document.querySelectorAll('[class^="ejs_"], [class*=" ejs_"]').forEach(el => {
-        if (!el.matches('canvas')) {
-          el.style.display = 'none';
-          el.style.visibility = 'hidden';
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        document.querySelectorAll('.ejs_gamepad, .ejs_virtualGamepad').forEach(el => {
+          el.style.opacity = '0.15';
           el.style.pointerEvents = 'none';
-        }
-      });
+        });
+        document.querySelectorAll('.ejs_menu_bar, .ejs_start_button').forEach(el => {
+          el.style.display = 'none';
+        });
+      }, 2000);
     });
-    observer.observe(document.body, { childList: true, subtree: true, attributes: true });
   </script>
   <script src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>
 
