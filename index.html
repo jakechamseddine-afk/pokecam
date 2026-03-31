@@ -2,8 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>POKECAM</title>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <style>
@@ -23,7 +22,6 @@
       color: var(--white);
       font-family: 'Press Start 2P', monospace;
       min-height: 100vh;
-      overscroll-behavior-y: none;
     }
 
     /* ── HERO ── */
@@ -189,40 +187,7 @@
       overflow: hidden;
     }
 
-    #start-overlay {
-      position: absolute;
-      inset: 0;
-      background: #000;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-      cursor: pointer;
-      z-index: 10;
-    }
-
-    #start-overlay .start-text {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 10px;
-      color: var(--white);
-      letter-spacing: 2px;
-      animation: blink 1.2s step-end infinite;
-    }
-
-    #start-overlay .start-sub {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 6px;
-      color: var(--gray);
-      letter-spacing: 1px;
-    }
-
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0; }
-    }
-
-    /* Force EmulatorJS canvas to fill */
+    /* Force EmulatorJS canvas to fill and hide its UI */
     #emulator-container canvas {
       width: 100% !important;
       height: 100% !important;
@@ -230,13 +195,11 @@
       display: block;
     }
 
-    /* Fade the overlay buttons to 15% so they don't distract */
-    #emulator-container .ejs_start_button { display: none !important; }
-    #emulator-container .ejs_menu_bar     { display: none !important; }
+    #emulator-container .ejs_start_button,
+    #emulator-container .ejs_menu_bar,
     #emulator-container .ejs_gamepad,
     #emulator-container .ejs_virtualGamepad {
-      opacity: 0.15 !important;
-      pointer-events: none !important;
+      display: none !important;
     }
 
     .controls-frame {
@@ -271,6 +234,7 @@
       justify-content: center;
       user-select: none;
       -webkit-user-select: none;
+      touch-action: none;
       transition: background 0.08s, color 0.08s;
     }
 
@@ -300,6 +264,7 @@
       cursor: pointer;
       user-select: none;
       -webkit-user-select: none;
+      touch-action: none;
       transition: background 0.08s, color 0.08s, border-color 0.08s;
     }
 
@@ -324,6 +289,7 @@
       padding: 9px 18px;
       cursor: pointer;
       letter-spacing: 1px;
+      touch-action: none;
       transition: border-color 0.08s, color 0.08s;
     }
 
@@ -405,21 +371,12 @@
     <p class="section-label">▶ PLAY IN BROWSER</p>
 
     <div class="game-wrapper">
-
-      <div id="ios-tip" style="display:none; background:var(--mid); border:1px solid var(--gray); padding:14px 16px; margin-bottom:16px; font-size:6px; color:var(--light); line-height:2.4; letter-spacing:1px;">
-        📱 ON IPHONE: TAP <strong style="color:var(--white)">SHARE → ADD TO HOME SCREEN</strong> FOR THE BEST EXPERIENCE. PREVENTS RANDOM RELOADS.
-      </div>
       <div class="screen-frame">
         <div class="screen-top-bar">
           <span class="screen-label">POKECAM — PHOTOGRAPH VERSION</span>
           <span class="screen-dot"></span>
         </div>
-        <div id="emulator-container">
-          <div id="start-overlay">
-            <div class="start-text">▶ PRESS TO PLAY</div>
-            <div class="start-sub">POKECAM — PHOTOGRAPH VERSION</div>
-          </div>
-        </div>
+        <div id="emulator-container"></div>
       </div>
 
       <div class="controls-frame">
@@ -459,105 +416,49 @@
   </footer>
 
   <script>
-    // Prevent tab visibility changes from resetting the emulator
-    document.addEventListener('visibilitychange', e => {
-      e.stopImmediatePropagation();
-    }, true);
+    window.EJS_player        = '#emulator-container';
+    window.EJS_core          = 'gb';
+    window.EJS_gameUrl       = 'pokeblue.gbc';
+    window.EJS_pathtodata    = 'https://cdn.emulatorjs.org/stable/data/';
+    window.EJS_startOnLoaded = true;
+    window.EJS_color         = '#ffffff';
+    window.EJS_backgroundColor = '#000000';
+    window.EJS_Buttons = {
+      playPause: false, restart: false, mute: false,
+      settings: false, fullscreen: true, saveState: false,
+      loadState: false, screenRecord: false, gamepad: false,
+      cheat: false, volume: false, saveSavFiles: false
+    };
+    window.EJS_VirtualGamepadSettings = { hide: true };
+  </script>
+  <script src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>
 
-    window.addEventListener('blur', e => {
-      e.stopImmediatePropagation();
-    }, true);
-
-    // Show iOS tip only on iPhone Safari
-    if (/iphone/i.test(navigator.userAgent) && /safari/i.test(navigator.userAgent)) {
-      document.getElementById('ios-tip').style.display = 'block';
-    }
-
-    // Pure JS Game Boy emulator - no WebAssembly, runs great on Chrome
-    let gbemu = null;
-    let animFrame = null;
-
-    function startEmulator() {
-      document.getElementById('start-overlay').style.display = 'none';
-
-      const canvas = document.createElement('canvas');
-      canvas.width = 160;
-      canvas.height = 144;
-      canvas.style.width = '100%';
-      canvas.style.height = '100%';
-      canvas.style.imageRendering = 'pixelated';
-      canvas.style.display = 'block';
-      canvas.setAttribute('tabindex', '0');
-      document.getElementById('emulator-container').appendChild(canvas);
-      canvas.focus();
-
-      fetch('pokeblue.gbc')
-        .then(r => r.arrayBuffer())
-        .then(buf => {
-          const rom = new Uint8Array(buf);
-          // Load GameBoy.js
-          const s = document.createElement('script');
-          s.src = 'https://cdn.jsdelivr.net/gh/taisel/GameBoy-Online@master/js/GameBoyCore.js';
-          s.onload = () => {
-            const s2 = document.createElement('script');
-            s2.src = 'https://cdn.jsdelivr.net/gh/taisel/GameBoy-Online@master/js/other/base64.js';
-            s2.onload = () => {
-              // Convert to base64 for GameBoy-Online API
-              let binary = '';
-              rom.forEach(b => binary += String.fromCharCode(b));
-              const b64 = btoa(binary);
-              // Init emulator
-              gbemu = new GameBoyCore(b64, canvas);
-              gbemu.start();
-              // Run loop
-              function loop() {
-                gbemu.run();
-                animFrame = requestAnimationFrame(loop);
-              }
-              loop();
-            };
-            document.body.appendChild(s2);
-          };
-          document.body.appendChild(s);
-        })
-        .catch(() => {
-          document.getElementById('emulator-container').innerHTML =
-            '<div style="color:#aaa;font-family:\'Press Start 2P\',monospace;font-size:8px;padding:20px;text-align:center;line-height:2.5">ROM NOT FOUND<br>CHECK pokeblue.gbc</div>';
-        });
-    }
-
-    const overlay = document.getElementById('start-overlay');
-    overlay.addEventListener('click', startEmulator);
-    overlay.addEventListener('touchstart', e => { e.preventDefault(); startEmulator(); }, { passive: false });
-
-    // Keyboard — GameBoy-Online key codes
-    const KEYS = {
-      ArrowRight: 0, ArrowLeft: 1, ArrowUp: 2, ArrowDown: 3,
-      x: 4, X: 4, z: 5, Z: 5, Backspace: 6, Enter: 7
+  <script>
+    // Keyboard
+    const KC = {
+      ArrowUp:38, ArrowDown:40, ArrowLeft:37, ArrowRight:39,
+      x:88, X:88, z:90, Z:90, Enter:13, Backspace:8
     };
     document.addEventListener('keydown', e => {
-      if (KEYS[e.key] !== undefined && gbemu) {
-        e.preventDefault();
-        gbemu.JoyPadEvent(KEYS[e.key], true);
-      }
+      if (KC[e.key]) { e.preventDefault(); fire('keydown', KC[e.key]); }
     });
     document.addEventListener('keyup', e => {
-      if (KEYS[e.key] !== undefined && gbemu) {
-        e.preventDefault();
-        gbemu.JoyPadEvent(KEYS[e.key], false);
-      }
+      if (KC[e.key]) { e.preventDefault(); fire('keyup', KC[e.key]); }
     });
+    function fire(type, keyCode) {
+      document.dispatchEvent(new KeyboardEvent(type, { keyCode, bubbles: true }));
+    }
 
     // Buttons
     const BTNS = {
-      'btn-right': 0, 'btn-left': 1, 'btn-up': 2, 'btn-down': 3,
-      'btn-a': 4, 'btn-b': 5, 'btn-select': 6, 'btn-start': 7
+      'btn-up':38,'btn-down':40,'btn-left':37,'btn-right':39,
+      'btn-a':88,'btn-b':90,'btn-start':13,'btn-select':8
     };
-    Object.entries(BTNS).forEach(([id, key]) => {
+    Object.entries(BTNS).forEach(([id, kc]) => {
       const el = document.getElementById(id);
       if (!el) return;
-      const dn = e => { e.preventDefault(); el.classList.add('pressed');    if (gbemu) gbemu.JoyPadEvent(key, true); };
-      const up = e => { e.preventDefault(); el.classList.remove('pressed'); if (gbemu) gbemu.JoyPadEvent(key, false); };
+      const dn = e => { e.preventDefault(); el.classList.add('pressed');    fire('keydown', kc); };
+      const up = e => { e.preventDefault(); el.classList.remove('pressed'); fire('keyup',   kc); };
       el.addEventListener('mousedown',   dn, { passive: false });
       el.addEventListener('touchstart',  dn, { passive: false });
       el.addEventListener('mouseup',     up, { passive: false });
